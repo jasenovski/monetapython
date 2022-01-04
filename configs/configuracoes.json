@@ -1,0 +1,11 @@
+{
+  "arquivo_txt": "TICKERS_TESTE.txt",
+  "desvio_padrao_final": 0.01,
+  "valor_investimento": 3000,
+  "percentual_corte": 0.01,
+  "country": "BR",
+  "exportar_cotacoes": true,
+  "tolerancia_hurst": 0.05,
+  "dias_cots": 34,
+  "fixar_seed": false
+}
