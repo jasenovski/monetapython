@@ -12,7 +12,13 @@ import pandas_datareader.data as web
 import yfinance as yf
 
 
-def escolher_seed(tolerancia):
+def escolher_seed(tolerancia: float) -> tuple:
+
+    """
+    parametro: tolerancia = faixa tolerável para o hurst calculado de um determinado seed de números aleatórios
+    Esta função é feita para determinar um seed que, para mil números, o aleatório respeita a faixa tolerável do Hurst
+    """
+
     seed = 0
     np.random.seed(seed)
     aleatorios = np.random.random(size=1000)
@@ -25,22 +31,30 @@ def escolher_seed(tolerancia):
     return seed, hurst
 
 
-def buscar_cotacoes(arquivo_txt, dias_cotacoes, country):
+def buscar_cotacoes(arquivo_txt: str, dias_cotacoes: int, country: str) -> tuple:
+
+    """
+    arquivo_txt: endereco do caminho parcial do arquivo dos tickers
+    dias_cotacoes: quantidade de dias para download dos dados de fechamento
+    country: país de origem das ações
+    Esta função realiza a busca dos dados de fechamento das cotações para cada dia
+    """
+
     tickers_df = pd.read_csv(arquivo_txt, header=None)
     tickers = []
     casas_arred = 0
     if country == "US":
-        casas_arred = 4
+        casas_arred = 4     # é possível comprar uma ação americana com casas decimais
         for ticker in tickers_df[0]:
             tickers.append(ticker)
     elif country == "BR":
         for ticker in tickers_df[0]:
-            tickers.append(ticker + ".SA")
+            tickers.append(ticker + ".SA")  # ação BR deve terminar com '.SA'
 
     yf.pdr_override()
     cotations = web.get_data_yahoo(tickers, period=str(dias_cotacoes) + 'd', threads=1)['Adj Close']
 
-    return cotations, tickers, casas_arred
+    return cotations, casas_arred
 
 
 def calcular_variacoes(cotations, tickers):
@@ -142,7 +156,8 @@ def substituir_geracoes(fit_pais, fit_filhos, cromos_pais, cromos_filhos):
     return cromos_finais
 
 
-def exportar_df(valor_inv, arr, names_indexes, path_name, perc_corte, casas_arred, cotacoes):
+def exportar_df(valor_inv, arr, names_indexes, path_name, perc_corte, casas_arred, cotacoes, country):
+
     df = pd.DataFrame(data=(np.round(arr, 2)).T, index=names_indexes, columns=["%"])
 
     for ticker in names_indexes:
@@ -151,35 +166,49 @@ def exportar_df(valor_inv, arr, names_indexes, path_name, perc_corte, casas_arre
 
     cotations = []
     for ticker in df.index:
-        cotation = np.round(cotacoes[ticker][-1], 2)
+        cotation = cotacoes[ticker][-1]
         cotations.append(cotation)
 
     df["precos"] = cotations
 
-    df["qtd_comprar"] = np.round((df["%"] * valor_inv) / df["precos"], casas_arred)
+    if country == "US":
+        df["qtd_comprar"] = np.round((df["%"] * valor_inv) / df["precos"], casas_arred)
+    else:
+        df["qtd_comprar"] = np.floor((df["%"] * valor_inv) / df["precos"])
 
     df["valor_total"] = df["qtd_comprar"] * df["precos"]
 
+    df["%"] = df["%"] * 100
+
+    df["precos"] = np.round(df["precos"], 2)
+
     df.to_excel(path_name)
 
+    return df
 
-def moneta_ag(arq_txt, dp_final, valor_investimento, percentual_corte, country, exportar_cotacoes, fixar_seed, tolerancia_hurst, dias_cots):
+
+def moneta_ag(arq_txt, dp_final, valor_investimento, percentual_corte, country, exportar_cotacoes, fixar_seed, tolerancia_hurst, dias_cots, qtd_maiores_medias):
 
     if fixar_seed is True:
         seed_bom, hurst_seed = escolher_seed(tolerancia=tolerancia_hurst)
         np.random.seed(seed_bom)
 
-    cotacoes, tickers, casas_arred = buscar_cotacoes(arquivo_txt=arq_txt, dias_cotacoes=dias_cots, country=country)
+    cotacoes, casas_arred = buscar_cotacoes(arquivo_txt=arq_txt, dias_cotacoes=dias_cots, country=country)
 
-    cotacoes = cotacoes.dropna()
+    cotacoes = cotacoes.dropna(axis=1)
+    tickers = cotacoes.columns
 
     if exportar_cotacoes is True:
         cotacoes.to_excel(os.path.join("cotacoes", "cotacoes.xlsx"))
 
     cotations_var = calcular_variacoes(cotations=cotacoes, tickers=tickers)
 
-    num_cotacoes = cotacoes.shape[0]
-    num_genes = cotacoes.shape[1]
+    means = cotations_var.mean(axis=0)
+    tickers = list(means.nlargest(qtd_maiores_medias).index)
+    cotations_var = cotations_var[tickers]
+    
+    num_cotacoes = cotations_var.shape[0]
+    num_genes = cotations_var.shape[1]
 
     mat_cov = np.cov(cotations_var.T)
 
@@ -243,23 +272,32 @@ def moneta_ag(arq_txt, dp_final, valor_investimento, percentual_corte, country, 
     if (np.round(cromossomos.sum(axis=1), 0) == 1).all():
         path_export = ""
         cromossomo_final = cromossomos[0]
-        retorno_final, risco_final = calc_retornos_riscos_carteira(cromos=np.array([cromossomo_final]), medias=medias, mat_cov=mat_cov)
-        fitness_final = np.round(retorno_final / risco_final, 2)
+        retornos_finais, riscos_finais = calc_retornos_riscos_carteira(cromos=np.array([cromossomo_final]), medias=medias, mat_cov=mat_cov)
+        fitnesses_finais = np.round(retornos_finais / riscos_finais, 2)
         for i in range(100):
             nome_txt = arq_txt.split(os.path.sep)[1].split('.')[0]
             dia = dtm.datetime.now().strftime("%d-%m-%y")
-            name_file = os.path.join("resultados", f"resultado_{dia}_{dias_cots}d_{country}_{nome_txt}_{fitness_final[0]}_{i}.xlsx")
+            name_file = os.path.join("resultados", f"resultado_{dia}_{dias_cots}d_{country}_{nome_txt}_{np.mean(fitnesses_finais)}_{i}.xlsx")
             if not os.path.exists(name_file):
                 path_export = name_file
                 break
 
-        exportar_df(valor_inv=valor_investimento, arr=cromossomo_final, names_indexes=tickers,
-                    path_name=path_export, perc_corte=percentual_corte, casas_arred=casas_arred, cotacoes=cotacoes)
+        df_final = exportar_df(valor_inv=valor_investimento, arr=cromossomo_final, names_indexes=tickers,
+                               path_name=path_export, perc_corte=percentual_corte, casas_arred=casas_arred, 
+                               cotacoes=cotacoes, country=country)
+
+        moeda = "R$" if country == "BR" else "US$"
+
         print(f"[INFO] O resultado foi obtido com {iteracoes} iteracoes.")
         print(f"[INFO] O resultado final foi exportado com sucesso para: {path_export}")
-        print(f"[INFO] O fitness obtido foi de: {round(np.average(fitness_carteiras), 2)}")
-        print(f"[INFO] O retorno esperado é de: {round(np.average(retornos_carteiras), 5) * 100} %")
-        print(f"[INFO] O risco esperado é de: {round(np.average(riscos_carteiras), 5) * 100} %")
+        print(f"[INFO] O fitness obtido foi de: {round(np.average(fitnesses_finais), 5)}")
+        print(f"[INFO] O retorno esperado é de: {round(np.average(retornos_finais), 5) * 100} %")
+        print(f"[INFO] O risco esperado é de: {round(np.average(riscos_finais), 5) * 100} %")
+        print(f"------------------------ Resultado Final ------------------------")
+        print(df_final)
+        print(f"[INFO] O valor total do investimento é de: {moeda} {round(df_final['valor_total'].sum(), 2)}")
+        print(f"[INFO] O percentual investido será de: {round(df_final['valor_total'].sum() / valor_investimento, 2) * 100}%")
+        print(f"-----------------------------------------------------------------")
     else:
         print(f"[INFO] A soma dos percentuais não resulta 100% para todos os cromossomos\n {cromossomos.sum(axis=1)}")
 
@@ -279,4 +317,5 @@ if __name__ == "__main__":
               exportar_cotacoes=configuracoes["exportar_cotacoes"],
               fixar_seed=configuracoes["fixar_seed"],
               tolerancia_hurst=configuracoes["tolerancia_hurst"],
-              dias_cots=configuracoes["dias_cots"])
+              dias_cots=configuracoes["dias_cots"],
+              qtd_maiores_medias=configuracoes["maiores_medias"])
