@@ -1,12 +1,12 @@
 {
-  "arquivo_txt": "TICKERS_US.txt",
-  "desvio_padrao_final": 0.01,
-  "valor_investimento": 1300,
+  "arquivo_txt": "TICKERS_BR.txt",
+  "desvio_padrao_final": 0.0001,
+  "valor_investimento": 10000,
   "percentual_corte": 0.01,
-  "country": "US",
-  "exportar_cotacoes": false,
+  "country": "BR",
+  "exportar_cotacoes": true,
   "tolerancia_hurst": 0.05,
-  "dias_cots": 5,
-  "fixar_seed": false,
+  "dias_cots": 72,
+  "fixar_seed": true,
   "maiores_medias": 15
 }

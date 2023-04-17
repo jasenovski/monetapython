@@ -2,12 +2,13 @@
 import numpy as np
 import pandas as pd
 import os
+import glob
 # import argparse
 import json
 import datetime as dtm
 from funcoes import calculo_hurst
 
-# Obtençaõ das cotações
+# Obtenção das cotações
 import pandas_datareader.data as web
 import yfinance as yf
 
@@ -20,13 +21,13 @@ def escolher_seed(tolerancia: float) -> tuple:
     """
 
     seed = 0
-    np.random.seed(seed)
-    aleatorios = np.random.random(size=1000)
-    hurst = calculo_hurst.hurst(aleatorios)
-    while np.abs(0.5 - hurst) > tolerancia:
+    distancia = np.inf
+    while distancia > tolerancia:
+        seed += 1
+        np.random.seed(seed)
         aleatorios = np.random.random(size=1000)
         hurst = calculo_hurst.hurst(aleatorios)
-        seed += 1
+        distancia = np.abs(0.5 - hurst)
 
     return seed, hurst
 
@@ -43,11 +44,11 @@ def buscar_cotacoes(arquivo_txt: str, dias_cotacoes: int, country: str) -> tuple
     tickers_df = pd.read_csv(arquivo_txt, header=None)
     tickers = []
     casas_arred = 0
-    if country == "US":
+    if country.upper() == "US":
         casas_arred = 4     # é possível comprar uma ação americana com casas decimais
         for ticker in tickers_df[0]:
             tickers.append(ticker)
-    elif country == "BR":
+    elif country.upper() == "BR":
         for ticker in tickers_df[0]:
             tickers.append(ticker + ".SA")  # ação BR deve terminar com '.SA'
 
@@ -160,6 +161,8 @@ def exportar_df(valor_inv, arr, names_indexes, path_name, perc_corte, casas_arre
 
     df = pd.DataFrame(data=(np.round(arr, 2)).T, index=names_indexes, columns=["%"])
 
+    moeda = "R$" if country.upper() == "BR" else "US$"
+
     for ticker in names_indexes:
         if df["%"][ticker] < perc_corte:
             df.drop(labels=[ticker], inplace=True)
@@ -171,16 +174,17 @@ def exportar_df(valor_inv, arr, names_indexes, path_name, perc_corte, casas_arre
 
     df["precos"] = cotations
 
-    if country == "US":
+    if country.upper() == "US":
         df["qtd_comprar"] = np.round((df["%"] * valor_inv) / df["precos"], casas_arred)
     else:
         df["qtd_comprar"] = np.floor((df["%"] * valor_inv) / df["precos"])
 
     df["valor_total"] = df["qtd_comprar"] * df["precos"]
+    df["valor_total_formatado"] = df["valor_total"].apply(lambda x: f"{moeda} {x:.2f}")
 
     df["%"] = df["%"] * 100
 
-    df["precos"] = np.round(df["precos"], 2)
+    df["precos"] = df["precos"].apply(lambda x: f"{moeda} {x:.2f}")
 
     df.to_excel(path_name)
 
@@ -190,7 +194,7 @@ def exportar_df(valor_inv, arr, names_indexes, path_name, perc_corte, casas_arre
 def moneta_ag(arq_txt, dp_final, valor_investimento, percentual_corte, country, exportar_cotacoes, fixar_seed, tolerancia_hurst, dias_cots, qtd_maiores_medias):
 
     if fixar_seed is True:
-        seed_bom, hurst_seed = escolher_seed(tolerancia=tolerancia_hurst)
+        seed_bom, coef_hurst = escolher_seed(tolerancia=tolerancia_hurst)
         np.random.seed(seed_bom)
 
     cotacoes, casas_arred = buscar_cotacoes(arquivo_txt=arq_txt, dias_cotacoes=dias_cots, country=country)
@@ -199,7 +203,7 @@ def moneta_ag(arq_txt, dp_final, valor_investimento, percentual_corte, country, 
     tickers = cotacoes.columns
 
     if exportar_cotacoes is True:
-        cotacoes.to_excel(os.path.join("cotacoes", "cotacoes.xlsx"))
+        cotacoes.to_excel(os.path.join("cotacoes", f"cotacoes{country.upper()}_{dias_cots}d_{dtm.datetime.now().strftime('%d-%m-%y')}.xlsx"))
 
     cotations_var = calcular_variacoes(cotations=cotacoes, tickers=tickers)
 
@@ -270,33 +274,33 @@ def moneta_ag(arq_txt, dp_final, valor_investimento, percentual_corte, country, 
         iteracoes += 1
 
     if (np.round(cromossomos.sum(axis=1), 0) == 1).all():
-        path_export = ""
+        moeda = "R$" if country.upper() == "BR" else "US$"
         cromossomo_final = cromossomos[0]
         retornos_finais, riscos_finais = calc_retornos_riscos_carteira(cromos=np.array([cromossomo_final]), medias=medias, mat_cov=mat_cov)
         fitnesses_finais = np.round(retornos_finais / riscos_finais, 2)
-        for i in range(100):
-            nome_txt = arq_txt.split(os.path.sep)[1].split('.')[0]
-            dia = dtm.datetime.now().strftime("%d-%m-%y")
-            name_file = os.path.join("resultados", f"resultado_{dia}_{dias_cots}d_{country}_{nome_txt}_{np.mean(fitnesses_finais)}_{i}.xlsx")
-            if not os.path.exists(name_file):
-                path_export = name_file
-                break
+        nome_txt = arq_txt.split(os.path.sep)[1].split('.')[0]
+        dia = dtm.datetime.now().strftime("%d-%m-%y")
+
+        qtd_files = len(glob.glob(os.path.join("resultados", f"resultado_{dia}_{dias_cots}d_{country.upper()}_{nome_txt}_*.xlsx")))
+        name_file = os.path.join("resultados", f"resultado_{dia}_{dias_cots}d_{country.upper()}_{nome_txt}_fitness{np.mean(fitnesses_finais)}_{qtd_files + 1}.xlsx")
 
         df_final = exportar_df(valor_inv=valor_investimento, arr=cromossomo_final, names_indexes=tickers,
-                               path_name=path_export, perc_corte=percentual_corte, casas_arred=casas_arred, 
+                               path_name=name_file, perc_corte=percentual_corte, casas_arred=casas_arred, 
                                cotacoes=cotacoes, country=country)
 
-        moeda = "R$" if country == "BR" else "US$"
-
-        print(f"[INFO] O resultado foi obtido com {iteracoes} iteracoes.")
-        print(f"[INFO] O resultado final foi exportado com sucesso para: {path_export}")
-        print(f"[INFO] O fitness obtido foi de: {round(np.average(fitnesses_finais), 5)}")
-        print(f"[INFO] O retorno esperado é de: {round(np.average(retornos_finais), 5) * 100} %")
-        print(f"[INFO] O risco esperado é de: {round(np.average(riscos_finais), 5) * 100} %")
+        if fixar_seed is True:
+            print(f"[INFO] O resultado foi obtido com {iteracoes} iteracoes. (Coeficiente de Hurst: {coef_hurst:.2f})")
+        else:
+            print(f"[INFO] O resultado foi obtido com {iteracoes} iteracoes.")
+            
+        print(f"[INFO] O resultado final foi exportado com sucesso para: {name_file}")
+        print(f"[INFO] O fitness obtido foi de: {round(np.average(fitnesses_finais), 5):.2f}")
+        print(f"[INFO] O retorno esperado é de: {round(np.average(retornos_finais), 5) * 100:.5f}%")
+        print(f"[INFO] O risco esperado é de: {round(np.average(riscos_finais), 5) * 100:.5f}%")
         print(f"------------------------ Resultado Final ------------------------")
-        print(df_final)
-        print(f"[INFO] O valor total do investimento é de: {moeda} {round(df_final['valor_total'].sum(), 2)}")
-        print(f"[INFO] O percentual investido será de: {round(df_final['valor_total'].sum() / valor_investimento, 2) * 100}%")
+        print(df_final[["%", "precos", "qtd_comprar", "valor_total_formatado"]].rename(columns={"valor_total_formatado": "valor_total"}))
+        print(f"[INFO] O valor total do investimento é de: {moeda} {df_final['valor_total'].sum():,.2f}")
+        print(f"[INFO] O percentual investido será de: {(df_final['valor_total'].sum() / valor_investimento * 100):.2f}%")
         print(f"-----------------------------------------------------------------")
     else:
         print(f"[INFO] A soma dos percentuais não resulta 100% para todos os cromossomos\n {cromossomos.sum(axis=1)}")
