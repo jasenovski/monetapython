@@ -1,10 +1,10 @@
 {
-  "arquivo_txt": "TICKERS_BR.txt",
+  "arquivo_txt": "tickers_br.csv",
   "desvio_padrao_final": 0.0001,
   "valor_investimento": 10000,
   "percentual_corte": 0.01,
   "country": "BR",
-  "exportar_cotacoes": true,
+  "exportar_cotacoes": false,
   "tolerancia_hurst": 0.05,
   "dias_cots": 72,
   "fixar_seed": true,
