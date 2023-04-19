@@ -24,7 +24,7 @@ if __name__ == "__main__":
         default=stocks[:5]
         )
     st.sidebar.divider()
-    
+
     currency = "R$" if country == "BR" else "US$"
     investment = st.sidebar.text_input(
         label=f"Valor (base) do investimento na carteira ({currency}):",
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     )
 
     if solucao:
-        df_solucao = pd.read_csv(os.path.join("resultados", "resultado.csv"), index_col=0)
+        df_solucao = pd.read_csv(os.path.join("resultado.csv"), index_col=0)
         df_solucao = df_solucao.reset_index().rename(columns={"index": "Ações"})
         # df_solucao = df_solucao[["Ações", "%", "precos", "qtd_comprar", "valor_total_formatado"]]
         df_solucao.rename(columns={"precos": "Preços", 
@@ -98,9 +98,8 @@ if __name__ == "__main__":
         fig = px.pie(df_solucao, values='%', names='Ações', title='Portfolio Otimizado')
         st.plotly_chart(fig)
 
-        valores_finais = pd.read_pickle(os.path.join("resultados", "resultados.pkl"))
+        valores_finais = pd.read_pickle(os.path.join("resultados.pkl"))
         col1, col2, col3 = st.columns(3)
         col1.metric("Valor Total", f"{currency} {df_solucao['valor_total'].sum():.2f}",)
         col2.metric("Retorno a.m.", f"{((1 + valores_finais['retorno']) ** 22 - 1) * 100:.2f}%")
         col3.metric("Risco a.m.", f"{((1 + valores_finais['risco']) ** 22 - 1) * 100:.2f}%")
-        
