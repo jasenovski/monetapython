@@ -104,4 +104,4 @@ def exportar_df(valor_inv, arr, names_indexes, perc_corte, casas_arred, cotacoes
 
     df["precos"] = df["precos"].apply(lambda x: f"{moeda} {x:.2f}")
 
-    df.to_csv(os.path.join("resultados", "resultado.csv"))
+    df.to_csv(os.path.join("resultado.csv"))

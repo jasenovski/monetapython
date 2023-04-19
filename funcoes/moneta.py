@@ -102,7 +102,7 @@ def moneta_ag(tickers_list, dp_final, valor_investimento, percentual_corte, coun
     pd.to_pickle({"fitness final": np.average(fitnesses_finais), 
                   "retorno": np.average(retornos_finais), 
                   "risco": np.average(riscos_finais)},
-                  os.path.join("resultados", "resultados.pkl"))
+                  os.path.join("resultados.pkl"))
 
     exportar_df(valor_inv=valor_investimento, arr=cromossomo_final, names_indexes=tickers, 
                             perc_corte=percentual_corte, casas_arred=casas_arred, 

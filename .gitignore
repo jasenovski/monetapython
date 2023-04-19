@@ -8,4 +8,6 @@ __pycache__
 funcoes/__pycache__
 *.xlsx
 *.xls
+*.pkl
+*.csv
 .idea
