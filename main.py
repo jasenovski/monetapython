@@ -17,11 +17,21 @@ if __name__ == "__main__":
     )
     st.sidebar.divider()
 
+    check = st.sidebar.checkbox(
+        label=f"Selecione se quiser rodar o modelo para todas as ações ({country})",
+        value=False
+    )
+
     stocks = pd.read_csv(os.path.join("tickers", f"tickers_{country.lower()}.csv"))["Tickers"].tolist()
+    if check is True:
+        stocks_filtered = stocks[:]
+    else:
+        stocks_filtered = stocks[:5]
+
     stocks_selections = st.sidebar.multiselect(
         label="Acoes Disponiveis:", 
         options=stocks,
-        default=stocks[:5]
+        default=stocks_filtered
         )
     st.sidebar.divider()
 
@@ -100,6 +110,14 @@ if __name__ == "__main__":
 
         valores_finais = pd.read_pickle(os.path.join("resultados.pkl"))
         col1, col2, col3 = st.columns(3)
-        col1.metric("Valor Total", f"{currency} {df_solucao['valor_total'].sum():.2f}",)
+        col1.metric("Valor Total", f"{currency} {df_solucao['valor_total'].sum():,.2f}",)
         col2.metric("Retorno a.m.", f"{((1 + valores_finais['retorno']) ** 22 - 1) * 100:.2f}%")
         col3.metric("Risco a.m.", f"{((1 + valores_finais['risco']) ** 22 - 1) * 100:.2f}%")
+
+
+        st.warning(
+            body="O retorno mencionado acima é baseado em desempenho passado. Retorno passado não garante retorno futuro!!!",
+            icon="⚠️"
+        )
+
+        
