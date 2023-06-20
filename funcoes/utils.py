@@ -100,7 +100,7 @@ def exportar_df(valor_inv, arr, names_indexes, perc_corte, casas_arred, cotacoes
     df["valor_total"] = df["qtd_comprar"] * df["precos"]
     df["valor_total_formatado"] = df["valor_total"].apply(lambda x: f"{moeda} {x:_.2f}".replace(".", ",").replace("_", "."))
 
-    df["qtd_comprar"] = df["qtd_comprar"].apply(lambda x: f"{int(x):_.2f}".replace(".", ",").replace("_", "."))
+    df["qtd_comprar"] = df["qtd_comprar"].apply(lambda x: f"{float(x):_.4f}".replace(".", ",").replace("_", "."))
 
     df["%"] = df["%"] * 100
 

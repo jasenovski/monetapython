@@ -89,11 +89,9 @@ if __name__ == "__main__":
     if solucao:
         df_solucao = pd.read_csv(os.path.join("resultado.csv"), index_col=0)
         df_solucao = df_solucao.reset_index().rename(columns={"index": "Ações"})
-        # df_solucao = df_solucao[["Ações", "%", "precos", "qtd_comprar", "valor_total_formatado"]]
-        df_solucao.rename(columns={"precos": "Preços", 
-                                   "qtd_comprar": "Qtd. Comprar", 
-                                   "valor_total_formatado": f"Valor Total ({currency})"}, 
-                                   inplace=True)
+        df_solucao = df_solucao.rename(columns={"precos": "Preços", 
+                                                "qtd_comprar": "Qtd. Comprar", 
+                                                "valor_total_formatado": f"Valor Total ({currency})"})
 
         st.subheader(
             body="Solução Obtida"
