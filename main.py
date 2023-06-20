@@ -110,14 +110,23 @@ if __name__ == "__main__":
 
         valores_finais = pd.read_pickle(os.path.join("resultados.pkl"))
         col1, col2, col3 = st.columns(3)
-        col1.metric("Valor Total", f"{currency} {df_solucao['valor_total'].sum():,.2f}",)
-        col2.metric("Retorno a.m.", f"{((1 + valores_finais['retorno']) ** 22 - 1) * 100:.2f}%")
-        col3.metric("Risco a.m.", f"{((1 + valores_finais['risco']) ** 22 - 1) * 100:.2f}%")
+        col1.metric("Valor Total", f"{currency} {df_solucao['valor_total'].sum():_.2f}".replace(".", ",").replace("_", "."))
+        col2.metric("Retorno a.m.", f"{((1 + valores_finais['retorno']) ** 22 - 1) * 100:.2f}%".replace(".", ","))
+        col3.metric("Risco a.m.", f"{((1 + valores_finais['risco']) ** 22 - 1) * 100:.2f}%".replace(".", ","))
 
 
         st.warning(
             body="O retorno mencionado acima é baseado em desempenho passado. Retorno passado não garante retorno futuro!!!",
             icon="⚠️"
         )
+        try:
+            cotacoes = pd.read_pickle(os.path.join("cotacoes", "cotacoes.pkl"))
 
-        
+            st.write("")
+            st.subheader(f"Cotações (adj. close) para a geração da carteira ({currency}):")
+
+            st.dataframe(
+                data=cotacoes
+            )
+        except FileNotFoundError:
+            pass

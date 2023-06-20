@@ -98,10 +98,12 @@ def exportar_df(valor_inv, arr, names_indexes, perc_corte, casas_arred, cotacoes
         df["qtd_comprar"] = np.floor((df["%"] * valor_inv) / df["precos"])
 
     df["valor_total"] = df["qtd_comprar"] * df["precos"]
-    df["valor_total_formatado"] = df["valor_total"].apply(lambda x: f"{moeda} {x:.2f}")
+    df["valor_total_formatado"] = df["valor_total"].apply(lambda x: f"{moeda} {x:_.2f}".replace(".", ",").replace("_", "."))
+
+    df["qtd_comprar"] = df["qtd_comprar"].apply(lambda x: f"{int(x):_.2f}".replace(".", ",").replace("_", "."))
 
     df["%"] = df["%"] * 100
 
-    df["precos"] = df["precos"].apply(lambda x: f"{moeda} {x:.2f}")
+    df["precos"] = df["precos"].apply(lambda x: f"{moeda} {x:_.2f}".replace(".", ",").replace("_", "."))
 
     df.to_csv(os.path.join("resultado.csv"))

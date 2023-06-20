@@ -13,14 +13,10 @@ def moneta_ag(tickers_list, dp_final, valor_investimento, percentual_corte, coun
         np.random.seed(seed_bom)
 
     cotacoes, casas_arred = buscar_cotacoes(tickers_list=tickers_list, dias_cotacoes=dias_cots, country=country)
+    cotacoes.to_pickle(os.path.join("cotacoes", "cotacoes.pkl"))
 
     cotacoes = cotacoes.dropna(axis=1)
-    # cotacoes.columns = [acao.replace(".SA", "") for acao in cotacoes.columns if  acao[-2:] == "SA"]
     tickers = cotacoes.columns
-    # tickers = cotacoes.columns
-
-    # if exportar_cotacoes is True:
-    #     cotacoes.to_excel(os.path.join("cotacoes", f"cotacoes{country.upper()}_{dias_cots}d_{dtm.datetime.now().strftime('%d-%m-%y')}.xlsx"))
 
     cotations_var = calcular_variacoes(cotations=cotacoes, tickers=tickers)
 
@@ -110,19 +106,14 @@ def moneta_ag(tickers_list, dp_final, valor_investimento, percentual_corte, coun
     
     return True
 
-    #     if fixar_seed is True:
-    #         print(f"[INFO] O resultado foi obtido com {iteracoes} iteracoes. (Coeficiente de Hurst: {coef_hurst:.2f})")
-    #     else:
-    #         print(f"[INFO] O resultado foi obtido com {iteracoes} iteracoes.")
-        
-    #     print(f"[INFO] O resultado final foi exportado com sucesso para: {name_file}")
-    #     print(f"[INFO] O fitness obtido foi de: {round(np.average(fitnesses_finais), 5):.2f}")
-    #     print(f"[INFO] O retorno esperado é de: {round(np.average(retornos_finais), 5) * 100:.5f}%")
-    #     print(f"[INFO] O risco esperado é de: {round(np.average(riscos_finais), 5) * 100:.5f}%")
-    #     print(f"------------------------ Resultado Final ------------------------")
-    #     print(df_final[["%", "precos", "qtd_comprar", "valor_total_formatado"]].rename(columns={"valor_total_formatado": "valor_total"}))
-    #     print(f"[INFO] O valor total do investimento é de: {moeda} {df_final['valor_total'].sum():,.2f}")
-    #     print(f"[INFO] O percentual investido será de: {(df_final['valor_total'].sum() / valor_investimento * 100):.2f}%")
-    #     print(f"-----------------------------------------------------------------")
-    # else:
-    #     print(f"[INFO] A soma dos percentuais não resulta 100% para todos os cromossomos\n {cromossomos.sum(axis=1)}")
+if __name__ == "__main__":
+    tickers_list = pd.read_csv("tickers/tickers_br.csv")["Tickers"].values.tolist()
+    dp_final = 0.01
+    valor_investimento = 100000
+    percentual_corte = 0.05
+    country = "br"
+    fixar_seed = True
+    tolerancia_hurst = 0.05
+    dias_cots = 34
+    qtd_maiores_medias = 10
+    m = moneta_ag(tickers_list, dp_final, valor_investimento, percentual_corte, country, fixar_seed, tolerancia_hurst, dias_cots, qtd_maiores_medias)

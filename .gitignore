@@ -2,12 +2,11 @@ venv
 executar_moneta.bat
 resultados
 moneta.ipynb
-cotacoes
 configs
 __pycache__
 funcoes/__pycache__
 *.xlsx
 *.xls
-*.pkl
 *.csv
 .idea
+resultados.pkl
