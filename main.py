@@ -120,7 +120,7 @@ if __name__ == "__main__":
         try:
             cotacoes = pd.read_pickle(os.path.join("cotacoes", "cotacoes.pkl"))
 
-            st.write("")
+            st.divider()
             st.subheader(f"Cotações (adj. close) para a geração da carteira ({currency}):")
 
             st.dataframe(
