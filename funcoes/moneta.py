@@ -19,6 +19,7 @@ def moneta_ag(tickers_list, dp_final, valor_investimento, percentual_corte, coun
     tickers = cotacoes.columns
 
     cotations_var = calcular_variacoes(cotations=cotacoes, tickers=tickers)
+    print(cotations_var)
 
     means = cotations_var.mean(axis=0)
     tickers = list(means.nlargest(qtd_maiores_medias).index)
