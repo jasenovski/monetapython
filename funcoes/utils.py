@@ -51,14 +51,16 @@ def buscar_cotacoes(tickers_list: list, dias_cotacoes: int, country: str) -> tup
 
 
 def calcular_variacoes(cotations, tickers):
-    n_lins = cotations.shape[0]
-    n_cols = cotations.shape[1]
+    # n_lins = cotations.shape[0]
+    # n_cols = cotations.shape[1]
 
-    cotations_var = np.zeros(shape=(n_lins - 1, n_cols), dtype=float)
-    cotations_var = pd.DataFrame(data=cotations_var, columns=tickers)
-    for ticker in tickers:
-        for j in range(1, n_lins):
-            cotations_var[ticker][j - 1] = (cotations[ticker][j] - cotations[ticker][j - 1]) / cotations[ticker][j - 1]
+    # cotations_var = np.zeros(shape=(n_lins - 1, n_cols), dtype=float)
+    # cotations_var = pd.DataFrame(data=cotations_var, columns=tickers)
+    # for ticker in tickers:
+    #     for j in range(1, n_lins):
+    #         cotations_var[ticker][j - 1] = (cotations[ticker][j] - cotations[ticker][j - 1]) / cotations[ticker][j - 1]
+
+    cotations_var = cotations.pct_change().dropna(axis=0)
 
     return cotations_var
 

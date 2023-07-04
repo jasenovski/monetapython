@@ -15,11 +15,11 @@ def moneta_ag(tickers_list, dp_final, valor_investimento, percentual_corte, coun
     cotacoes, casas_arred = buscar_cotacoes(tickers_list=tickers_list, dias_cotacoes=dias_cots, country=country)
     cotacoes.to_pickle(os.path.join("cotacoes", "cotacoes.pkl"))
 
-    cotacoes = cotacoes.dropna(axis=1)
+    cotacoes.drop(columns=cotacoes.isna().sum()[cotacoes.isna().sum() > int(cotacoes.shape[0] / 10)].index.values, inplace=True)
+    cotacoes = cotacoes.dropna(axis=0)
     tickers = cotacoes.columns
 
     cotations_var = calcular_variacoes(cotations=cotacoes, tickers=tickers)
-    print(cotations_var)
 
     means = cotations_var.mean(axis=0)
     tickers = list(means.nlargest(qtd_maiores_medias).index)

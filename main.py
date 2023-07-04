@@ -22,7 +22,7 @@ if __name__ == "__main__":
         value=False
     )
 
-    stocks = pd.read_csv(os.path.join("tickers", f"tickers_{country.lower()}.csv"))["Tickers"].tolist()
+    stocks = sorted(pd.read_csv(os.path.join("tickers", f"tickers_{country.lower()}.csv"))["Tickers"].tolist())
     if check is True:
         stocks_filtered = stocks[:]
     else:
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         label="Insira o valor mínimo para o percentual (%) aceitável de uma ação na carteira final:",
         value="5"
     )
-    minimum_percentage = float(minimum_percentage.replace(",", ".")) / 100
+    minimum_percentage = float(minimum_percentage.replace(",", ".")) / 100 if minimum_percentage != "" else 0.05
     st.sidebar.divider()
 
     dias_cotacoes = st.sidebar.slider(
