@@ -62,8 +62,8 @@ if __name__ == "__main__":
 
     top_averages = st.sidebar.slider(
         label="Maiores médias:",
-        min_value=5,
-        max_value=15,
+        min_value=0,
+        max_value=20,
         value=15,
         step=1
     )
